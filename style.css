@@ -20,13 +20,19 @@ body{
     color:#21105e;
 }
 
+
 header{
     background:#21105e;
     height:140px;
     display:flex;
     justify-content:center;
     align-items:center;
+
+    position:sticky;
+    top:0;
+    z-index:1000;
 }
+
 
 .title{
     font-size:120px;
@@ -37,7 +43,7 @@ header{
 
 .grid{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(5,1fr);
     gap:24px;
     padding:24px;
 }
