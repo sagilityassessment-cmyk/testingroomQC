@@ -96,4 +96,30 @@ window.callSeat = async function(seat){
     btn.innerHTML = "CALLED ✓";
 };
 
+window.clearAllSeats = async function () {
+
+    const confirmClear = confirm(
+        "Are you sure you want to clear all seat data?"
+    );
+
+    if (!confirmClear) {
+        return;
+    }
+
+    for (let i = 1; i <= 20; i++) {
+
+        await set(
+            ref(
+                db,
+                `locations/${SITE}/seats/${i}`
+            ),
+            0
+        );
+
+    }
+
+    alert("All seats have been reset to 0.");
+
+    loadSeats();
+};
 loadSeats();
