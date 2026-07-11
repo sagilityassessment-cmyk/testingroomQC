@@ -10,8 +10,30 @@ import {
 const board = document.getElementById("board");
 const popup = document.getElementById("popup");
 
+const chime = new Audio("./chime.mp3");
+
+let selectedVoice = null;
 let queue = [];
 let processing = false;
+let chimePlayed = false;
+
+/* FEMALE VOICE */
+function loadFemaleVoice() {
+
+    const voices = speechSynthesis.getVoices();
+
+    selectedVoice =
+        voices.find(v => /jenny/i.test(v.name)) ||
+        voices.find(v => /aria/i.test(v.name)) ||
+        voices.find(v => /zira/i.test(v.name)) ||
+        voices.find(v => /samantha/i.test(v.name)) ||
+        voices[0];
+
+    console.log("Using voice:", selectedVoice?.name);
+}
+
+loadFemaleVoice();
+speechSynthesis.onvoiceschanged = loadFemaleVoice;
 
 function draw(seats = []) {
 
@@ -25,11 +47,11 @@ function draw(seats = []) {
         </tr>
     `;
 
-    for(let r = 1; r <= 5; r++){
+    for (let r = 1; r <= 5; r++) {
 
         html += "<tr>";
 
-        for(let c = 0; c < 4; c++){
+        for (let c = 0; c < 4; c++) {
 
             let seat = r + (c * 5);
 
@@ -56,50 +78,40 @@ function draw(seats = []) {
     board.innerHTML = html;
 }
 
-/* QC SEATS */
+/* SEATS */
 onValue(
     ref(db, `locations/${SITE}/seats`),
     snapshot => {
 
         const seats = snapshot.val() || [];
-
         draw(seats);
 
     }
 );
 
-/* QC QUEUE */
+/* QUEUE */
 onValue(
     ref(db, `locations/${SITE}/queue`),
     snapshot => {
 
         const data = snapshot.val() || {};
-
         queue = Object.entries(data);
+
+        if (queue.length === 0) {
+            chimePlayed = false;
+        }
 
     }
 );
 
-function femaleVoice(){
-
-    const voices = speechSynthesis.getVoices();
-
-    return (
-        voices.find(v =>
-            /zira|aria|samantha|jenny/i.test(v.name)
-        ) || voices[0]
-    );
-}
-
 setInterval(async () => {
 
-    if(processing) return;
-
-    if(queue.length === 0) return;
+    if (processing) return;
+    if (queue.length === 0) return;
 
     processing = true;
 
-    const [key,item] = queue[0];
+    const [key, item] = queue[0];
 
     popup.classList.remove("hidden");
 
@@ -115,44 +127,73 @@ setInterval(async () => {
 
     let announceText = "";
 
-    if(isNaN(item.id)){
+    if (isNaN(item.id)) {
 
         announceText =
             `Seat number ${item.seat}. Applicant ${item.id}. Please proceed to Testing Room.`;
 
-    }else{
+    } else {
 
         announceText =
             `Seat number ${item.seat}. ID number ${item.id}. Please proceed to Testing Room.`;
 
     }
 
-    const u = new SpeechSynthesisUtterance(
-        announceText
-    );
+    const speak = () => {
 
-    u.voice = femaleVoice();
-    u.rate = 0.8;
-    u.pitch = 1.0;
-    u.volume = 1;
+        speechSynthesis.cancel();
 
-    speechSynthesis.cancel();
+        const speech = new SpeechSynthesisUtterance(
+            announceText
+        );
 
-    setTimeout(() => {
-        speechSynthesis.speak(u);
-    }, 300);
+        speech.voice = selectedVoice;
+        speech.rate = 0.9;
+        speech.pitch = 1.0;
+        speech.volume = 1;
+
+        speechSynthesis.speak(speech);
+    };
+
+    try {
+
+        if (!chimePlayed) {
+
+            chimePlayed = true;
+
+            chime.pause();
+            chime.currentTime = 0;
+
+            await chime.play();
+
+            setTimeout(() => {
+                speak();
+            }, 1000);
+
+        } else {
+
+            speak();
+
+        }
+
+    } catch (err) {
+
+        console.log("Chime failed:", err);
+        speak();
+
+    }
 
     setTimeout(async () => {
 
         popup.classList.add("hidden");
 
-        try{
+        try {
 
             await remove(
                 ref(db, `locations/${SITE}/queue/${key}`)
             );
 
-        }catch(err){
+        } catch (err) {
 
             console.log(err);
 
@@ -160,6 +201,6 @@ setInterval(async () => {
 
         processing = false;
 
-    }, 8000);
+    }, 10000);
 
 }, 1000);
