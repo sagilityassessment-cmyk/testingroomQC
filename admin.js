@@ -1,3 +1,4 @@
+const SITE = "qc";
 import { db } from "./firebase.js";
 import {
   ref,
