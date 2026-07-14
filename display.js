@@ -168,7 +168,7 @@ setInterval(async () => {
 
             setTimeout(() => {
                 speak();
-            }, 1000);
+            }, 2000);
 
         } else {
 
@@ -203,4 +203,4 @@ setInterval(async () => {
 
     }, 10000);
 
-}, 1000);
+}, 2000);
